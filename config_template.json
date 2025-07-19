@@ -1,0 +1,88 @@
+{
+  "config-items": [
+    {
+      "name": "chat engine",
+      "available": [
+	{
+          "name": "chat_engines.openai_local",
+	  "warning": "",
+          "notice": "Don't forget to add OPEN_AI_API_KEY and OPEN_AI_BASE_URL to your environment variables.",
+          "module-specific-config": [
+            {
+              "name": "model",
+              "value": "koboldcpp"
+            },
+            {
+              "name": "temperature",
+              "value": 0.9
+            },
+            {
+              "name": "max_tokens",
+              "value": 512
+            },
+            {
+              "name": "top_p",
+              "value": 1
+            },
+            {
+              "name": "frequency_penalty",
+              "value": 0.0
+            },
+            {
+              "name": "presence_penalty",
+              "value": 0.6
+            }
+          ]
+        },
+	{
+          "name": "chat_engines.openai_gpt_online",
+          "warning": "(Warning: Uses internet service - your chats will not be private)",
+          "notice": "Don't forget to add OPEN_AI_API_KEY to your environment variables.",
+          "module-specific-config": [
+            {
+              "name": "model",
+              "value": "text-davinci-002"
+            },
+            {
+              "name": "temperature",
+              "value": 0.9
+            },
+            {
+              "name": "max_tokens",
+              "value": 512
+            },
+            {
+              "name": "top_p",
+              "value": 1
+            },
+            {
+              "name": "frequency_penalty",
+              "value": 0.0
+            },
+            {
+              "name": "presence_penalty",
+              "value": 0.6
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "text to speech engine",
+      "available": [
+        {
+          "name": "tts_engines.gTTS_online",
+          "warning": "(Warning: Uses internet service - your chats will not be private)",
+          "notice": "",
+          "module-specific-config": []
+        },
+	{
+          "name": "tts_engines.coqui_offline",
+          "warning": "",
+          "notice": "",
+          "module-specific-config": []
+        }
+      ]
+    }
+  ]
+}

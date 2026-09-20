@@ -3,10 +3,11 @@ An LLM to make a vocabulary builder
 
 Goals:
 
+- [x] Port the plugin architecture from Iris so we can support multiple chat client APIs and TTS engines
 - [ ] Acquire a dictionary of French words ordered by frequency of usage.
-- [ ] Ask the LLM for an English explanation of the word.
-- [ ] Ask the LLM for beginner and intermediate sentences using the word.
-- [ ] Ask the LLM about different written forms in which the word is likely to be seen.
+- [x] Ask the LLM for an English explanation of the word.
+- [x] Ask the LLM for beginner and intermediate sentences using the word.
+- [x] Ask the LLM about different written forms in which the word is likely to be seen.
 - [ ] Format the result into a consistent JSON 
 - [ ] Use TTS to create a spoken summary of the above info (in French and English)
 - [ ] Generate a flashcard image
@@ -55,6 +56,11 @@ python -m unidic download
 python vocab-bot --test-tts
 python vocab-bot --test-llm
 ```
+
+# You'll need a word list
+
+I got one from here, https://wortschatz.uni-leipzig.de/en/download/French, trimmed the numbers out of it, then ran the wordlist-pruner.py on it to weed out the junk.
+
 
 # Run it
 

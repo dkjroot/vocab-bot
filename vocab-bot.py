@@ -31,6 +31,7 @@ except Exception as e:
     exit(1)
 
 # Now we can load the various modules depending on what the user has configured...
+import argparse
 import importlib
 
 logger.info("Loading TTS library...")
@@ -107,9 +108,11 @@ def make_card_for_word(word):
 
 # Main
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="vocab-bot")
+    parser.add_argument("--word", type=str, default="manger", help="The French word to process")
+    args = parser.parse_args()
     try:
-        word = "manger"
+        word = args.word
         make_card_for_word(word)
-
     except Exception:
         logger.exception("Exception")

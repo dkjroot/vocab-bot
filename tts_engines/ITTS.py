@@ -9,5 +9,5 @@ class ITTS(ABC):
         pass
 
     @abstractmethod
-    def speak(self, text, lang, region, out_path):
+    def speak(self, text, lang, out_path, region=None):
         pass

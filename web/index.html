@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#f7f8fc">
+  <title>Vocab Bot · French flashcards</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/styles.css">
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <a href="#main" class="skip-link">Skip to content</a>
+  <div class="shell">
+    <aside class="sidebar">
+      <a href="#deck" class="brand">
+        <img src="/icon.svg" alt="" width="40" height="40">
+        <span><strong>Vocab Bot</strong><small>French notebook</small></span>
+      </a>
+      <nav id="nav" aria-label="Main navigation"></nav>
+      <div class="sidebar-bottom">
+        <div class="language"><span class="flag" aria-hidden="true"></span><span>French <small>FR · EN</small></span></div>
+        <button id="pronounce" class="side-action" type="button"></button>
+        <button id="theme" class="side-action" type="button" role="switch" aria-checked="false"></button>
+      </div>
+    </aside>
+    <main id="main" tabindex="-1">
+      <div id="view"></div>
+    </main>
+  </div>
+  <div id="notice" role="status" class="toast" hidden></div>
+  <dialog id="pronunciation" aria-labelledby="pronunciation-title">
+    <form id="pronunciation-form">
+      <div class="dialog-head"><h2 id="pronunciation-title">French pronunciation</h2><button type="button" class="icon-button" data-action="close-dialog" aria-label="Close">×</button></div>
+      <label for="say-text">Type or paste French text</label>
+      <textarea id="say-text" lang="fr" maxlength="1200" rows="4" required placeholder="Bonjour, comment ça va ?"></textarea>
+      <button class="button primary" type="submit">Listen</button>
+    </form>
+  </dialog>
+  <dialog id="remove-card" aria-labelledby="remove-title">
+    <form id="remove-form">
+      <div class="dialog-head"><h2 id="remove-title">Delete this card?</h2><button type="button" class="icon-button" data-action="close-dialog" aria-label="Close">×</button></div>
+      <p id="remove-copy"></p>
+      <div class="actions">
+        <button type="button" class="button" data-action="close-dialog">Cancel</button>
+        <button type="submit" class="button danger">Delete card</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

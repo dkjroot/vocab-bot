@@ -2,8 +2,6 @@
 from chat_engines.IChatEngine import IChatEngine
 from openai import OpenAI
 import os
-from collections import deque
-import logging
 
 class ChatEngine(IChatEngine):
     settings = None
@@ -30,19 +28,20 @@ class ChatEngine(IChatEngine):
 
     # Get a response from the GPT API
     def get_response(self, user_text):
-        self.conversation.append({'role': 'user', 'content': user_text})
+        user_message = {'role': 'user', 'content': user_text}
         completion = self.client.chat.completions.create(
             model=self.settings['model'],
-            messages=self.conversation,
+            messages=[*self.conversation, user_message],
             temperature=self.settings['temperature'],
             max_tokens=self.settings['max_tokens'],
             top_p=self.settings['top_p'],
             frequency_penalty=self.settings['frequency_penalty'],
             presence_penalty=self.settings['presence_penalty'],
         )
-        text = completion.choices[0].message.content.strip()
-        
-        # logging.getLogger(__name__).info(f"LLM Raw Response: {completion}")        
+        text = (completion.choices[0].message.content or "").strip() if completion.choices else ""
+        if not text:
+            raise RuntimeError("The OpenAI-compatible server did not return a text reply.")
+        self.conversation.append(user_message)
         self.conversation.append({'role': 'assistant', 'content': text})
         return text
 

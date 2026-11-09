@@ -1,10 +1,10 @@
 {
-    "chat engine": "chat_engines.openai_local",
-    "model": "koboldcpp",
+    "chat engine": "chat_engines.gemini_online",
+    "model": "gemini-3.1-flash-lite",
     "temperature": 0.9,
-    "max_tokens": 65536,
+    "max_tokens": 512,
     "top_p": 1,
     "frequency_penalty": 0.0,
     "presence_penalty": 0.6,
-    "text to speech engine": "tts_engines.gTTS_online"
+    "text to speech engine": "tts_engines.macos_offline"
 }

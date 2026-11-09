@@ -9,6 +9,7 @@ particular installed/transitive/native environment.
 | Library | Credit/source | Code license |
 | --- | --- | --- |
 | OpenAI Python SDK | [OpenAI and contributors](https://github.com/openai/openai-python) | Apache-2.0 |
+| Google Gen AI SDK | [Google and contributors](https://github.com/googleapis/python-genai) | Apache-2.0. Gemini service terms are separate. |
 | gTTS | [Pierre Nicolas Durette and contributors](https://pypi.org/project/gTTS/) | MIT; online service terms separate |
 | pydub | [James Robert and contributors](https://pypi.org/project/pydub/) | MIT |
 | PyTorch | [PyTorch contributors](https://github.com/pytorch/pytorch/blob/main/LICENSE) | BSD-3-Clause and bundled component notices |
@@ -48,8 +49,6 @@ tracked. Keep its original terms, source, author credits, and a record of prunin
 before publishing a derived word list or dataset. Permission has not been
 established merely by citing the download site.
 
-The README mentions MeloTTS/melotts-plus and UniDic, but no corresponding adapter
-is implemented here. Do not assume their model/dictionary licenses from that
-installation note. For any future distribution, inventory exact dependencies,
-voices, dictionaries and assets and keep required notices/source. See
-[LICENSING.md](LICENSING.md).
+The macOS speech adapter uses system tools and voices supplied by Apple.
+Refer to the [licence for your version of macOS](https://www.apple.com/legal/sla/)
+for the terms on generated audio.

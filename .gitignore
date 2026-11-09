@@ -208,3 +208,13 @@ cython_debug/
 marimo/_static/
 marimo/_lsp/
 __marimo__/
+
+# Local configuration and working notes
+/local-config.json
+.env
+/AGENTS.md
+/DEVELOPMENT.md
+/agent_docs/
+
+# Local flashcard data
+/data/

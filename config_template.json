@@ -3,10 +3,10 @@
     {
       "name": "chat engine",
       "available": [
-	{
+        {
           "name": "chat_engines.openai_local",
-	  "warning": "",
-          "notice": "Don't forget to add OPEN_AI_API_KEY and OPEN_AI_BASE_URL to your environment variables.",
+          "warning": "",
+          "notice": "Set OPENAI_BASE_URL if your server is at a different address. Set OPENAI_API_KEY if your server requires a key.",
           "module-specific-config": [
             {
               "name": "model",
@@ -34,34 +34,18 @@
             }
           ]
         },
-	{
-          "name": "chat_engines.openai_gpt_online",
-          "warning": "(Warning: Uses internet service - your chats will not be private)",
-          "notice": "Don't forget to add OPEN_AI_API_KEY to your environment variables.",
+        {
+          "name": "chat_engines.gemini_online",
+          "warning": "(Sends vocabulary prompts to Google)",
+          "notice": "Install google-genai and export GEMINI_API_KEY. You can change the model in local-config.json.",
           "module-specific-config": [
             {
               "name": "model",
-              "value": "text-davinci-002"
-            },
-            {
-              "name": "temperature",
-              "value": 0.9
+              "value": "gemini-3.8-flash"
             },
             {
               "name": "max_tokens",
-              "value": 512
-            },
-            {
-              "name": "top_p",
-              "value": 1
-            },
-            {
-              "name": "frequency_penalty",
-              "value": 0.0
-            },
-            {
-              "name": "presence_penalty",
-              "value": 0.6
+              "value": 8192
             }
           ]
         }
@@ -76,10 +60,16 @@
           "notice": "",
           "module-specific-config": []
         },
-	{
+        {
           "name": "tts_engines.coqui_offline",
           "warning": "",
           "notice": "",
+          "module-specific-config": []
+        },
+        {
+          "name": "tts_engines.macos_offline",
+          "warning": "(macOS only)",
+          "notice": "Uses the Mac's UK English and France French voices. Run say -v '?' to list installed voices.",
           "module-specific-config": []
         }
       ]

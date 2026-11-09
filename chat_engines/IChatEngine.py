@@ -13,5 +13,5 @@ class IChatEngine(ABC):
         pass
 
     @abstractmethod
-    def clear_conversation(system_prompt):
+    def clear_conversation(self, system_prompt):
         pass

@@ -1,30 +1,37 @@
 import json
+from pathlib import Path
 
-# Load the config template
-config_template = 'config_template.json'
-try:
-    with open(config_template) as config_template_file:
-        settings = json.load(config_template_file)
-except FileNotFoundError:
-    print("File not found:", config_template)
-    exit(1)
 
-created_config = {}
+def main():
+    template_path = Path(__file__).with_name("config_template.json")
+    with template_path.open(encoding="utf-8") as template:
+        settings = json.load(template)
 
-# Iterate each configurable item and ask the user to choose
-for config_item in settings['config-items']:
-    print("Please choose a value for the", config_item['name'] + ":")
-    n = 1
-    for option in config_item['available']:
-        print(str(n) + ":", option['name'], "    ", option['warning'])
-        n += 1
-    choice = int(input("Enter a number: "))
-    chosen = config_item['available'][choice - 1]
-    print("\nYou chose:", chosen['name'], "\n", chosen['notice'], "\n")
-    created_config[config_item['name']] = chosen['name']
-    for mod_config_item in chosen['module-specific-config']:
-        created_config[mod_config_item['name']] = mod_config_item['value']
+    created_config = {}
+    for item in settings["config-items"]:
+        options = item["available"]
+        print(f"Choose a {item['name']}.")
+        for number, option in enumerate(options, start=1):
+            print(f"  {number}. {option['name']} {option['warning']}".rstrip())
+        while True:
+            choice = input(f"Enter a number from 1 to {len(options)}: ").strip()
+            if choice in {str(number) for number in range(1, len(options) + 1)}:
+                break
+            print("Please choose one of the numbers in the list.")
 
-# Save the config to a file
-with open('local-config.json', 'w') as config_file:
-    json.dump(created_config, config_file, indent=4)
+        chosen = options[int(choice) - 1]
+        print(f"\nYou chose {chosen['name']}. {chosen['notice']}\n")
+        created_config[item["name"]] = chosen["name"]
+        for option in chosen["module-specific-config"]:
+            created_config[option["name"]] = option["value"]
+
+    config_path = Path("local-config.json")
+    config_path.write_text(json.dumps(created_config, indent=4) + "\n", encoding="utf-8")
+    print(f"Saved your settings to {config_path}.")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (EOFError, KeyboardInterrupt):
+        raise SystemExit("\nSetup cancelled.") from None

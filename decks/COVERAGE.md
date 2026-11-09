@@ -1,6 +1,6 @@
 # Published deck coverage
 
-There are **2,287 unique cards** in the published catalogue.
+There are **5,206 unique cards** in the published catalogue.
 
 ## Frequent French lemmas
 
@@ -14,20 +14,21 @@ These are corpus-based study targets with approximate levels.
 
 | Target level | Target lemmas | In the matching deck | In that deck or earlier | In any published deck |
 | --- | ---: | ---: | ---: | ---: |
-| A1 | 1,143 | 976/1143 (85.4%) | 976/1143 (85.4%) | 984/1143 (86.1%) |
-| A2 | 491 | 255/491 (51.9%) | 257/491 (52.3%) | 262/491 (53.4%) |
-| B1 | 1,208 | 473/1208 (39.2%) | 483/1208 (40.0%) | 489/1208 (40.5%) |
-| B2 | 1,301 | 218/1301 (16.8%) | 227/1301 (17.4%) | 227/1301 (17.4%) |
-| C1 | 164 | — | — | 10/164 (6.1%) |
-| C2 | 140 | — | — | 12/140 (8.6%) |
-| Unclassified | 553 | — | — | 97/553 (17.5%) |
+| A1 | 1,143 | 1143/1143 (100.0%) | 1143/1143 (100.0%) | 1143/1143 (100.0%) |
+| A2 | 491 | 491/491 (100.0%) | 491/491 (100.0%) | 491/491 (100.0%) |
+| B1 | 1,208 | 1208/1208 (100.0%) | 1208/1208 (100.0%) | 1208/1208 (100.0%) |
+| B2 | 1,301 | 1301/1301 (100.0%) | 1301/1301 (100.0%) | 1301/1301 (100.0%) |
+| C1 | 164 | — | — | 164/164 (100.0%) |
+| C2 | 140 | — | — | 140/140 (100.0%) |
+| Unclassified | 553 | — | — | 553/553 (100.0%) |
 
-Across the whole reference, the published decks match **2081/5000 (41.6%)**.
+Across the whole reference, the published decks match **5000/5000 (100.0%)**.
 
 The match is based on the card headword. Articles are stripped from single
 nouns and noun forms are reduced to the lemma when Lexique gives a unique match.
-Multiword expressions and words found only in example sentences do not count.
-A match means the spelling is taught somewhere in the deck, regardless of sense.
+Ordinary multiword cards and words found only in examples do not count.
+A few explicit matches teach the standard spelling of a frozen corpus entry.
+The audit tracks headwords and placements. Corpus counts can combine senses.
 
 ### Cumulative frequency targets
 
@@ -39,7 +40,7 @@ They measure what the cards teach and do not measure a learner's proficiency.
 | First 800 | 800/800 (100.0%) | 800/800 (100.0%) |
 | First 1,000 | 1000/1000 (100.0%) | 1000/1000 (100.0%) |
 | First 2,000 | 2000/2000 (100.0%) | 2000/2000 (100.0%) |
-| First 5,000 | 2081/5000 (41.6%) | 2081/5000 (41.6%) |
+| First 5,000 | 5000/5000 (100.0%) | 5000/5000 (100.0%) |
 
 ## Annex E vocabulary themes
 
@@ -50,10 +51,10 @@ practice. Annex E also lists grammar, discourse and communication goals.
 
 | Deck | Cards | Themes represented | Themes with 3+ cards |
 | --- | ---: | ---: | ---: |
-| A1 | 1010 | 16/16 (100.0%) | 16/16 (100.0%) |
-| A2 | 346 | 13/13 (100.0%) | 13/13 (100.0%) |
-| B1 | 555 | 11/11 (100.0%) | 11/11 (100.0%) |
-| B2 | 325 | 13/13 (100.0%) | 13/13 (100.0%) |
+| A1 | 1177 | 16/16 (100.0%) | 16/16 (100.0%) |
+| A2 | 582 | 13/13 (100.0%) | 13/13 (100.0%) |
+| B1 | 1290 | 11/11 (100.0%) | 11/11 (100.0%) |
+| B2 | 1408 | 13/13 (100.0%) | 13/13 (100.0%) |
 
 ### A1
 

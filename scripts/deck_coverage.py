@@ -21,6 +21,17 @@ DATA = ROOT / "data" / "coverage"
 LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
 LIMIT = 5000
 WORD = re.compile(r"[^\W\d_]+(?:['-][^\W\d_]+)*\Z")
+# These source spellings are kept as ranks while the cards teach standard French.
+STANDARD_SPELLINGS = {
+    "no": "nô",
+    "trés": "très",
+    "déja": "déjà",
+    "tit": "p'tit",
+    "age": "âge",
+    "media": "média",
+    "aprés": "après",
+    "est-ce-que": "est-ce que",
+}
 ARTICLE = re.compile(r"^(?:(?:le|la|les|un|une) |l')")
 
 
@@ -134,8 +145,9 @@ def report(decks, ranked, targets, matches, themes, frequency, total_cards):
         "", f"Across the whole reference, the published decks match **{ratio(len(all_matches), LIMIT)}**.",
         "", "The match is based on the card headword. Articles are stripped from single",
         "nouns and noun forms are reduced to the lemma when Lexique gives a unique match.",
-        "Multiword expressions and words found only in example sentences do not count.",
-        "A match means the spelling is taught somewhere in the deck, regardless of sense.", "",
+        "Ordinary multiword cards and words found only in examples do not count.",
+        "A few explicit matches teach the standard spelling of a frozen corpus entry.",
+        "The audit tracks headwords and placements. Corpus counts can combine senses.", "",
         "### Cumulative frequency targets", "",
         "These are project planning checkpoints, separate from the FLELex level labels.",
         "They measure what the cards teach and do not measure a learner's proficiency.", "",
@@ -146,6 +158,10 @@ def report(decks, ranked, targets, matches, themes, frequency, total_cards):
         window = set(ranked[:size])
         lines.append(f"| First {size:,} | {ratio(len(frequency[size]), size)} | "
                      f"{ratio(len(window & all_matches), size)} |")
+    contiguous = next((index for index, word in enumerate(ranked)
+                       if word not in frequency[LIMIT]), LIMIT)
+    if contiguous and contiguous not in FREQUENCY_TIERS:
+        lines.extend(["", f"Every rank from 1 through **{contiguous:,}** is covered in Core frequency."])
     lines.extend([
         "", "## Annex E vocabulary themes", "",
         "Cards are mapped by hand to the themes their headwords teach directly.",
@@ -208,7 +224,7 @@ def audit(rows, nouns):
             _, expected, label = rows[rank - 1]
             # The reference spells out oe, while the cards use the French ligature.
             literal = ARTICLE.sub("", normalise(card["title"]))
-            spellings = {expected, expected.replace("oe", "œ")}
+            spellings = {expected, expected.replace("oe", "œ"), STANDARD_SPELLINGS.get(expected, expected)}
             if not spellings.intersection((word, literal)) or card["source_level"] != label:
                 raise ValueError(f"Rank {rank} expects {expected} ({label}), got {card['title']}.")
             word = expected

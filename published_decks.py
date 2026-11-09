@@ -14,7 +14,6 @@ LEVELS = {
 
 
 FREQUENCY_TIERS = (800, 1000, 2000, 5000)
-CEFR_PLACEMENT_CEILING = 2000
 SOURCE_LEVELS = {*map(str.upper, LEVELS), "C1", "C2", "Unclassified"}
 
 
@@ -52,7 +51,7 @@ def published_decks():
         deck_id = f"core-{ceiling}"
         decks[deck_id] = {
             "id": deck_id, "name": f"First {ceiling:,}",
-            "description": f"Cards available so far from the first {ceiling:,} ranks. Tiers are cumulative.",
+            "description": f"The first {ceiling:,} ranked French headwords. Tiers are cumulative.",
             "cards": [], "members": [],
         }
     existing = {}
@@ -102,13 +101,13 @@ def published_decks():
             else:
                 card = authored.pop(rank, None)
                 if card is None:
-                    continue
+                    raise ValueError(f"Missing frequency card at rank {rank}.")
                 identifier = published_id("frequency", rank)
                 decks[label.lower() if label.lower() in LEVELS else tiers[0]]["cards"].append((identifier, card))
             card.update(frequency_rank=int(rank), source_level=label)
             for deck_id in tiers:
                 decks[deck_id]["members"].append(identifier)
-            if legacy and int(rank) <= CEFR_PLACEMENT_CEILING and label.lower() in LEVELS and level != label.lower():
+            if legacy and label.lower() in LEVELS and level != label.lower():
                 decks[label.lower()]["members"].append(identifier)
     if source_levels:
         raise ValueError(f"Source levels missing from the index: {', '.join(source_levels)}.")

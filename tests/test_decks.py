@@ -19,7 +19,7 @@ class TrainingSuiteTests(unittest.TestCase):
 
     def test_catalog_is_opt_in_and_reinstall_preserves_progress(self):
         catalog = list(published_decks())
-        self.assertEqual(len({identifier for deck in catalog for identifier, _ in deck["cards"]}), 2287)
+        self.assertEqual(len({identifier for deck in catalog for identifier, _ in deck["cards"]}), 5206)
         previous_sizes = (120, 100, 100, 100)
         previous = ({**deck, "members": [], "cards": [
             (identifier, {k: v for k, v in card.items() if k not in ("topic", "frequency_rank", "source_level")})
@@ -37,7 +37,7 @@ class TrainingSuiteTests(unittest.TestCase):
         reviewed = self.store.review(card["id"], "got-it", 0)
         self.store.set_enabled(card["id"], False, card=True)
         self.store.install_published(catalog)
-        self.assertEqual(len(self.store.list()), 2287)
+        self.assertEqual(len(self.store.list()), 5206)
         updated = next(item for item in self.store.list() if item["id"] == card["id"])
         self.assertEqual((updated["reviews"], updated["enabled"]), (1, 0))
         self.assertEqual(updated["due_at"], reviewed["due_at"])
@@ -48,16 +48,13 @@ class TrainingSuiteTests(unittest.TestCase):
     def test_frequency_tiers_share_cards_and_review_state(self):
         self.store.install_published(published_decks())
         cards = self.store.list()
-        for ceiling, expected_count in zip(FREQUENCY_TIERS, (800, 1000, 2000, 2081), strict=True):
+        for ceiling in FREQUENCY_TIERS:
             ranks = [card["frequency_rank"] for card in cards if f"core-{ceiling}" in card["deck_ids"]]
-            self.assertEqual(len(set(ranks)), expected_count)
-            self.assertEqual(len(ranks), expected_count)
-            self.assertTrue(all(1 <= rank <= ceiling for rank in ranks))
-            if ceiling <= 2000:
-                self.assertEqual(set(ranks), set(range(1, ceiling + 1)))
+            self.assertEqual(sorted(ranks), list(range(1, ceiling + 1)))
         for card in cards:
-            if card.get("frequency_rank", 5001) <= 2000 and card["source_level"] in ("A1", "A2", "B1", "B2"):
-                self.assertIn(card["source_level"].lower(), card["deck_ids"])
+            label = card.get("source_level")
+            if label in ("A1", "A2", "B1", "B2"):
+                self.assertIn(label.lower(), card["deck_ids"])
         identifier = published_id("a1", "be")
         self.store.set_enabled("core-800", True)
         updated = self.store.review(identifier, "got-it", 0)

@@ -106,6 +106,7 @@ button.chip:hover { border-color: var(--accent); }
 .filters { display: flex; gap: 7px; }
 .filters input { width: min(25vw, 215px); }
 .filters select { width: auto; }
+.topic-more { margin-top: 12px; }
 .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr)); gap: 12px; }
 .card-tile { display: flex; flex-direction: column; gap: 9px; align-items: flex-start; text-align: left; color: var(--text); padding: 16px; min-height: 152px; width: 100%; }
 .card-tile:hover { border-color: var(--accent); }

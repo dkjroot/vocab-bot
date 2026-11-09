@@ -9,6 +9,7 @@ const studyLanguages = {
     nounArticle: /^(?:(?:le|la|les|un|une|des)\s+|l['’])/iu},
 };
 const directions = ["reference", "target"];
+const topicPageSize = 24;
 const rankCeilings = [200, 400, 600, 800, 1000,
   ...Array.from({length: 16}, (_, index) => 1250 + index * 250)];
 const samples = {
@@ -45,7 +46,7 @@ function escapeHtml(value) {
 const state = {
   cards: [], decks: [], library: "reading", saveDeck: "reading", loaded: false, loadError: "", screen: "deck", detail: null,
   composer: "", revision: "", draft: null, draftBusy: false, draftError: "",
-  saving: false, query: "", kind: "", topic: "", rankBand: "", session: null,
+  saving: false, query: "", kind: "", topic: "", rankBand: "", topicLimits: new Map(), session: null,
 };
 
 const deckById = (id) => state.decks.find((deck) => deck.id === id);
@@ -172,7 +173,8 @@ function matchingCards() {
     && normalize(`${card.title} ${card.cue}`, false).includes(query));
 }
 
-function renderCardGrid() {
+function renderCardGrid(reset = false) {
+  if (reset) state.topicLimits.clear();
   const grid = $("#card-grid");
   if (!grid) return;
   if (!state.loaded) {
@@ -213,9 +215,15 @@ function renderCardGrid() {
     const study = group.some(included)
       ? `<a class="button subtle" href="#study/${state.library}${collectionQuery(topic, state.rankBand)}">Study topic</a>`
       : "";
+    const limit = state.topicLimits.get(topic) ?? topicPageSize;
+    const more = group.length > limit
+      ? `<button class="button subtle topic-more" data-action="more-topic" data-topic="${escapeHtml(topic)}"
+          data-next="${group[limit].id}">Show more ${escapeHtml(topic.toLowerCase())}
+          (${limit} of ${group.length})</button>`
+      : "";
     return `<section class="topic-section"><div class="section-title">
       <h3>${escapeHtml(topic)} <small>· ${group.length}</small></h3>${study}
-      </div>${tiles(group)}</section>`;
+      </div>${tiles(group.slice(0, limit))}${more}</section>`;
   }).join("");
 }
 
@@ -605,7 +613,10 @@ function route() {
   state.detail = id || null;
   if (state.screen === "deck") {
     const library = id || "reading";
-    if (state.library !== library) Object.assign(state, {library, query: "", kind: ""});
+    if (state.library !== library) {
+      Object.assign(state, {library, query: "", kind: ""});
+      state.topicLimits.clear();
+    }
     state.topic = topic;
     state.rankBand = library.startsWith("core-") ? rankBand : "";
     if (deckById(library)?.published === 0) state.saveDeck = library;
@@ -831,7 +842,7 @@ view.addEventListener("input", (event) => {
     case "capture": state.composer = value; break;
     case "revision": state.revision = value; break;
     case "answer-text": state.session.answer = value; break;
-    case "search": state.query = value; renderCardGrid(); break;
+    case "search": state.query = value; renderCardGrid(true); break;
   }
 });
 
@@ -881,15 +892,15 @@ view.addEventListener("change", (event) => {
   if (event.target.id === "save-deck") state.saveDeck = event.target.value;
   if (event.target.id === "topic") {
     state.topic = event.target.value;
-    renderCardGrid();
+    renderCardGrid(true);
   }
   if (event.target.id === "rank-band") {
     state.rankBand = event.target.value;
-    renderCardGrid();
+    renderCardGrid(true);
   }
   if (event.target.id === "kind") {
     state.kind = event.target.value;
-    renderCardGrid();
+    renderCardGrid(true);
   }
 });
 
@@ -952,6 +963,13 @@ document.addEventListener("click", async (event) => {
       composerFocus();
       break;
     case "open-card": location.hash = `card/${button.dataset.id}`; break;
+    case "more-topic": {
+      const {topic, next} = button.dataset;
+      state.topicLimits.set(topic, (state.topicLimits.get(topic) ?? topicPageSize) + topicPageSize);
+      renderCardGrid();
+      view.querySelector(`[data-action="open-card"][data-id="${next}"]`)?.focus();
+      break;
+    }
     case "discard":
       state.draft = null; state.draftError = ""; state.revision = ""; render(); composerFocus(); break;
     case "save": await saveDraft(); break;

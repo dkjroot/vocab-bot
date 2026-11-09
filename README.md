@@ -1,51 +1,49 @@
 # vocab-bot
 
-**[Support my work on Buy Me a Coffee](https://buymeacoffee.com/dkjroot)**
+Vocab Bot is a French flashcard notebook that runs on your own computer. You can
+start with the built-in decks, or make cards for things you come across in a
+book or conversation. I built it so I could practise going both ways between
+English and French, hear how things are said, and spend less time reviewing
+words I already know.
 
-### Free to use. Please help keep it that way.
+## What you can do
 
-I develop this project to be freely available to everyone, supported, if at all,
-by voluntary contributions. I do not want other people to profit from my work
-by selling copies, putting it behind a paywall, or building a paid application
-or hosted service around it. I ask you to respect that intention: please keep
-this work freely available, credit its origins, and direct people to
-[my official GitHub repository](https://github.com/dkjroot/vocab-bot) for the software.
+- [x] Browse **746 French cards** across A1, A2, B1 and B2. Pick a topic such as pronouns, travel or work and study it on its own.
+- [x] Make a card by asking in your own words. Get a draft with examples, useful forms and recall questions, then ask for changes or save it to a local deck.
+- [x] Study and test in either direction. Shuffle the cards or let the app pick a prompt language at random for each card.
+- [x] Listen to French headwords, examples and forms, or paste your own text into **Pronounce text**.
+- [x] Choose which decks to train on and disable individual cards you've mastered. You can enable them again with their review progress intact.
+- [x] Schedule reviews based on how well you remembered each card, or practise without changing the schedule.
+- [x] Work through a session with keyboard shortcuts, and switch between light and dark mode.
 
-If you want to help fund my development, please contribute **directly to me**
-through [Buy Me a Coffee](https://buymeacoffee.com/dkjroot). Paying a distributor
-or hosting provider does not fund my work unless I explicitly say otherwise.
-There is no obligation to contribute.
+## Get started
 
-**This is a personal request, not an additional license restriction.** The
-[GNU General Public License v3.0](LICENSE) permits commercial use and
-redistribution, including forks, subject to its terms. Those legal permissions
-remain unchanged by this request. See [licensing details](LICENSING.md) and
-[third-party credits](THIRD_PARTY_NOTICES.md).
+You can browse, study and test the built-in cards with Python and a browser.
+You only need to set up an LLM if you want to make new cards.
 
-A French vocabulary notebook for making flashcards and practising what you've learned.
+```sh
+git clone https://github.com/dkjroot/vocab-bot.git
+cd vocab-bot
+python3.12 web_server.py
+```
 
-Goals:
+Open [Vocab Bot](http://localhost:8477) in your browser. Go to **Decks**, browse
+a level and choose **Include in training** when you're ready. The published
+decks are opt-in, so you can start with just one. Then open **Study** to reveal
+translations or **Test** to type them from memory.
 
-- [x] Port the plugin architecture from Iris so we can support multiple chat client APIs and TTS engines
-- [ ] Acquire a dictionary of French words ordered by frequency of usage.
-- [x] Ask the LLM for an English explanation of the word.
-- [x] Ask the LLM for beginner and intermediate sentences using the word.
-- [x] Ask the LLM about different written forms in which the word is likely to be seen.
-- [x] Generate structured cards with examples, forms and recall questions.
-- [ ] Use TTS to create a spoken summary of the above info (in French and English)
-- [ ] Generate a flashcard image
-- [x] Save cards and review dates in a local deck.
-- [ ] Generate videos for upload to youtube
-- [ ] Share the tools freely; invite voluntary support for development.
+In Study, **R** reveals the answer and **N** moves to the next card. In Test,
+press **Enter** to check your answer. Press **Enter** or **Space** again to take
+the highlighted rating, or use **A**, **H** and **G** for Again, Hard and Got it.
+The buttons show their shortcuts, and you can turn off letter shortcuts in
+**Session options**.
 
+## Make your own cards
 
-
-
-## Setup on a Mac with Gemini
-
-If you've got a Google AI Studio API key, you can use Gemini for the vocabulary
-prompts and let your Mac read the English and French aloud. Run these commands
-from the project directory.
+On a Mac, you can use Gemini for drafts and your Mac's own French voice for
+pronunciation. Get an API key from Google AI Studio, stop the server if it's
+running, and run the following from the project directory. The key prompt
+uses zsh, the default shell on a Mac. [Google AI Studio](https://aistudio.google.com/apikey)
 
 ```sh
 python3.12 -m venv .venv
@@ -56,40 +54,32 @@ export GEMINI_API_KEY
 python configure.py
 ```
 
-The key prompt above is for zsh, the default shell on a Mac. You can get a key
-from [Google AI Studio](https://aistudio.google.com/apikey). Choose
-`chat_engines.gemini_online` and `tts_engines.macos_offline` in the setup menu.
-You can change the Gemini model in `local-config.json`. The bot keeps the key in
-your shell environment and sends your vocabulary prompts to Google's API.
+Choose `chat_engines.gemini_online` and `tts_engines.macos_offline`, then start
+the server again with `python web_server.py`. You can change the model in
+`local-config.json`. Keep the API key in your shell environment and export it
+again when you start the server from a new terminal.
 
-The speech engine uses Daniel for UK English and Thomas for French as spoken in
-France. Both run on your Mac. Use `say -v '?'` to see the names your Mac knows
-about. To try another voice, download it through Accessibility in System
-Settings and set `VOCAB_BOT_EN_VOICE` or `VOCAB_BOT_FR_VOICE` to its exact
-name. Apple's system voices are for personal practice. See
-[Apple's macOS licence](https://www.apple.com/legal/sla/) for the terms on using
-the audio.
+Try **Make a card** with a request like “Make me a card for *se faire* followed
+by an infinitive.” Read the draft and listen to the examples before saving it.
+You can ask for changes, such as adding a future-tense example. **Reading notes**
+is your first local deck. Use **Decks** to create more and choose where each
+draft goes.
 
-## Use the flashcard website
+### Use a different model server or voice
 
-With the virtual environment active and your key exported, start the server.
+If you already have an OpenAI-compatible model server, install `openai` and
+choose `chat_engines.openai_local` in `configure.py`. Set `OPENAI_BASE_URL` to
+its API URL and edit the model in `local-config.json` to match. The default URL
+is `http://localhost:8081/v1`. Set `OPENAI_API_KEY` if your server needs one.
 
-```sh
-python web_server.py
-```
+The website uses the configured macOS voice when available. On other setups,
+pronunciation can use an installed French voice from your browser. The Mac
+defaults to Thomas for French. To change it, run `say -v '?'` to see the installed
+voices, then set `VOCAB_BOT_FR_VOICE` to the name you want before starting the
+server. Apple's licence covers how you can use audio generated with its voices.
+[Apple's macOS licence](https://www.apple.com/legal/sla/)
 
-Open [the flashcard notebook](http://localhost:8477). I use **Make a card** to
-capture whatever I've come across, from a single word to a request like “Make
-me a card for *se faire* followed by an infinitive”. Read the draft and listen
-to the examples, then ask for changes or save it to your deck. Gemini writes
-the draft from your request, so it's worth checking the French before you
-save it.
-
-Open **Decks** to browse 746 French vocabulary cards across A1, A2, B1 and B2.
-Each has a French example, an English translation and a recall prompt. I used
-Annex E of the freely available Eaquals/CIEP French Core Inventory to choose
-themes and useful things to practise at each level. The words, examples and
-level assignments are my selection. [French Core Inventory](https://www.eaquals.org/wp-content/uploads/Inventaire_ONLINE_full.pdf)
+## The published decks
 
 | Deck | Cards | What you'll practise |
 | --- | ---: | --- |
@@ -98,74 +88,26 @@ level assignments are my selection. [French Core Inventory](https://www.eaquals.
 | B1 | 170 | Job interviews, outings, relationships, culture, news and opinions |
 | B2 | 173 | Meetings, evaluating evidence, argument, economics, climate and technology |
 
-Each published deck is grouped by topic. Pick a topic to narrow the list, or
-choose **Study topic** to study its enabled cards from your training suite.
+I used the Eaquals/CIEP French Core Inventory to choose vocabulary themes and
+wrote the cards and examples for this project. The level labels are approximate.
+You can see how much vocabulary the decks cover against the frequency list and
+the Inventory's themes in the coverage report. [French Core Inventory](https://www.eaquals.org/wp-content/uploads/Inventaire_ONLINE_full.pdf) · [Deck coverage report](decks/COVERAGE.md)
 
-The decks cover selected vocabulary and expressions. The Inventory also covers
-grammar, communication and other skills you'll need alongside the cards.
-The [deck coverage report](decks/COVERAGE.md) tracks frequent words and Annex E
-vocabulary themes separately.
+## Where your data goes
 
-Include the decks you want to train on. **Reading notes** is the default local
-deck, and you can create others and choose where to save each draft. If a card
-is already second nature, disable it from its card page or after answering in
-Test. You can enable it again later and pick up with its existing review progress.
+The website listens on your own computer at `localhost:8477`. Saved cards and
+review dates live in `data/flashcards.sqlite3`. To back up your deck, stop the
+server and copy that file. Studying and testing saved cards use the local deck.
+When you make or revise a draft, your request and any draft you're revising go
+to the model server you've configured.
 
-- **Study** shows a cue first. Try to say the translation, then reveal the
-  card to read and hear the examples and forms.
-- **Test** asks you to write the translation. It compares your answer with the
-  suggested answers and leaves the final judgement to you. Rate your recall
-  to schedule the next review, or choose **Practise all cards** for a round
-  that leaves your schedule alone.
-- In either mode, tick **Shuffle cards** to mix up the order. Choose which
-  language to see first under **Prompt in**. With both selected, the app picks
-  a direction for each new card.
-- The underlined letters are shortcuts. In Study, use **R** to reveal, **N**
-  for next, **P** for previous and **H** to hide. In Test, press Enter to
-  check your answer. Press Enter or Space again for the highlighted rating,
-  or use **A**, **H** or **G** to choose one. You can turn
-  off **Letter shortcuts** in the session options.
-- Use a speaker button beside the French or paste any French text into
-  **Pronounce text**. You can switch between light and dark mode in the sidebar.
+## Licence and support
 
-The server listens on this computer only. Saved cards and review dates live in
-`data/flashcards.sqlite3`. You can back up that file after stopping the server.
-Draft requests and any draft you ask to revise go to your configured LLM.
-Studying and testing saved cards use the local deck.
+I develop this project to be freely available to everyone, supported, if at all,
+by voluntary contributions. Please keep this work freely available, credit its
+origins, and point people to the official repository. If you'd like to support
+my work directly, you can buy me a coffee. [Official repository](https://github.com/dkjroot/vocab-bot) · [Buy Me a Coffee](https://buymeacoffee.com/dkjroot)
 
-## Other setups
-
-For an OpenAI-compatible server, install `openai` and choose
-`chat_engines.openai_local`. Set `OPENAI_BASE_URL` to your server's API URL
-and edit `model` in `local-config.json` to match the model your server offers.
-The default URL is `http://localhost:8081/v1`. Set `OPENAI_API_KEY` if the
-server asks for a key.
-
-For online speech with gTTS, install `gTTS` and `pydub` as well as FFmpeg.
-The Coqui option uses PyTorch, Coqui TTS and `pydub` with separately
-downloaded models. See [the model credits and terms](THIRD_PARTY_NOTICES.md)
-before using that option.
-
-## Test the command-line setup
-
-```sh
-python vocab-bot.py --test-llm
-python vocab-bot.py --test-tts
-```
-
-The LLM test asks for a sample definition. The speech test plays a sentence in
-each language and saves `en_test_out.wav` and `fr_test_out.wav` so you can
-listen again.
-
-# You'll need a word list
-
-I got one from here, https://wortschatz.uni-leipzig.de/en/download/French, trimmed the numbers out of it, then ran the wordlist-pruner.py on it to weed out the junk.
-
-
-# Run it
-
-```
-python vocab-bot.py --word acheter
-```
-
-This prints an English definition and a list of French forms in the terminal.
+That is a personal request. The GNU General Public License v3.0 permits
+commercial use and redistribution, including forks, subject to its terms.
+[GPLv3](LICENSE) · [Licensing details](LICENSING.md) · [Third-party credits](THIRD_PARTY_NOTICES.md)

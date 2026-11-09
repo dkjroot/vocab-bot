@@ -9,6 +9,8 @@ const studyLanguages = {
     nounArticle: /^(?:(?:le|la|les|un|une|des)\s+|l['’])/iu},
 };
 const directions = ["reference", "target"];
+const rankCeilings = [200, 400, 600, 800, 1000,
+  ...Array.from({length: 16}, (_, index) => 1250 + index * 250)];
 const samples = {
   "Grammar pattern": "Make me a card for se faire + infinitive, e.g. il s’est faire connaître.",
   "Everyday phrase": "Help me learn how to use « ça marche » in conversation.",
@@ -43,11 +45,13 @@ function escapeHtml(value) {
 const state = {
   cards: [], decks: [], library: "reading", saveDeck: "reading", loaded: false, loadError: "", screen: "deck", detail: null,
   composer: "", revision: "", draft: null, draftBusy: false, draftError: "",
-  saving: false, query: "", kind: "", topic: "", session: null,
+  saving: false, query: "", kind: "", topic: "", rankBand: "", session: null,
 };
 
 const deckById = (id) => state.decks.find((deck) => deck.id === id);
-const included = (card) => Boolean(card.enabled && deckById(card.deck_id)?.enabled);
+const cardDecks = (card) => card.deck_ids ?? [card.deck_id];
+const inDeck = (card, id) => cardDecks(card).includes(id);
+const included = (card) => Boolean(card.enabled && cardDecks(card).some((id) => deckById(id)?.enabled));
 const due = (card) => card.due_at <= Date.now() / 1000;
 const cardById = (id) => state.cards.find((card) => card.id === id);
 let toastTimer;
@@ -139,7 +143,7 @@ function normalize(text, accents = true, locale) {
 }
 
 function libraryCards() {
-  return state.cards.filter((card) => state.library === "all" || card.deck_id === state.library);
+  return state.cards.filter((card) => state.library === "all" || inDeck(card, state.library));
 }
 
 function deckOptions(decks, selected) {
@@ -147,10 +151,24 @@ function deckOptions(decks, selected) {
     ${escapeHtml(deck.name)}</option>`).join("");
 }
 
+function inRankBand(card, band) {
+  const index = rankCeilings.indexOf(Number(band));
+  return index < 0 || (card.frequency_rank > (rankCeilings[index - 1] ?? 0)
+    && card.frequency_rank <= rankCeilings[index]);
+}
+
+function collectionQuery(topic, rankBand) {
+  const params = new URLSearchParams();
+  if (topic) params.set("topic", topic);
+  if (rankBand) params.set("rank", rankBand);
+  return topic || rankBand ? `?${params}` : "";
+}
+
 function matchingCards() {
   const query = normalize(state.query, false);
   return libraryCards().filter((card) => (!state.kind || state.kind === card.kind)
     && (!state.topic || state.topic === card.topic)
+    && inRankBand(card, state.rankBand)
     && normalize(`${card.title} ${card.cue}`, false).includes(query));
 }
 
@@ -169,7 +187,7 @@ function renderCardGrid() {
   const cards = matchingCards();
   if (!cards.length) {
     grid.innerHTML = libraryCards().length
-      ? empty("deck", "No matching cards", "Try another search, topic or card type.")
+      ? empty("deck", "No matching cards", "Try another search or change the filters.")
       : empty("deck", "Your deck is empty", "Make a card from a word, phrase or grammar pattern you want to remember.",
         '<button class="button subtle" data-action="sample" data-sample="Grammar pattern">Try the grammar example</button>');
     return;
@@ -183,6 +201,7 @@ function renderCardGrid() {
     grid.innerHTML = tiles(cards);
     return;
   }
+  if (state.library.startsWith("core-")) cards.sort((a, b) => a.frequency_rank - b.frequency_rank);
   const groups = new Map();
   for (const card of cards) {
     const topic = card.topic || "Core expressions and other words";
@@ -192,7 +211,7 @@ function renderCardGrid() {
   const entries = [...groups.entries()].sort(([a], [b]) => a.localeCompare(b));
   grid.innerHTML = entries.map(([topic, group]) => {
     const study = group.some(included)
-      ? `<a class="button subtle" href="#study/${state.library}?${new URLSearchParams({topic})}">Study topic</a>`
+      ? `<a class="button subtle" href="#study/${state.library}${collectionQuery(topic, state.rankBand)}">Study topic</a>`
       : "";
     return `<section class="topic-section"><div class="section-title">
       <h3>${escapeHtml(topic)} <small>· ${group.length}</small></h3>${study}
@@ -204,6 +223,7 @@ function deckPage() {
   const count = state.cards.filter((card) => included(card) && due(card)).length;
   const deck = deckById(state.library);
   const published = Boolean(deck?.published);
+  const rankCeiling = state.library.startsWith("core-") ? Number(state.library.slice(5)) : 0;
   const topics = published ? [...new Set(libraryCards().map((card) => card.topic).filter(Boolean))].sort() : [];
   const heading = published
     ? head(escapeHtml(deck.name), escapeHtml(deck.description), '<a class="button" href="#decks">Back to decks</a>')
@@ -241,6 +261,12 @@ function deckPage() {
         ${topics.length ? `<select id="topic" aria-label="Filter by topic"><option value="">All topics</option>
           ${topics.map((topic) => `<option value="${escapeHtml(topic)}" ${state.topic === topic ? "selected" : ""}>${escapeHtml(topic)}</option>`).join("")}
         </select>` : ""}
+        ${rankCeiling ? `<select id="rank-band" aria-label="Filter by frequency rank">
+          <option value="">All ranks</option>
+          ${rankCeilings.filter((ceiling) => ceiling <= rankCeiling).map((ceiling, index) =>
+            `<option value="${ceiling}" ${Number(state.rankBand) === ceiling ? "selected" : ""}>
+              ${(rankCeilings[index - 1] ?? 0) + 1}–${ceiling}</option>`).join("")}
+        </select>` : ""}
         <input id="search" type="search" aria-label="Search cards" placeholder="Search cards" value="${escapeHtml(state.query)}">
         <select id="kind" aria-label="Filter by card type"><option value="">All types</option>
           ${kinds.map((kind) => `<option ${kind === state.kind ? "selected" : ""}>${kind}</option>`).join("")}</select></div>
@@ -253,9 +279,9 @@ function decksPage() {
   if (!state.loaded) return heading + '<p class="muted">Loading decks…</p>';
   if (state.loadError) return heading + empty("decks", "Couldn’t load decks", escapeHtml(state.loadError),
     '<button class="button" data-action="refresh">Try again</button>');
-  function tiles(published) {
-    return state.decks.filter((deck) => Boolean(deck.published) === published).map((deck) => {
-      const cards = state.cards.filter((card) => card.deck_id === deck.id);
+  function tiles(select) {
+    return state.decks.filter(select).map((deck) => {
+      const cards = state.cards.filter((card) => inDeck(card, deck.id));
       const count = cards.filter((card) => card.enabled).length;
       return `<article class="panel deck-tile">
         <div><h3>${escapeHtml(deck.name)}</h3>
@@ -269,9 +295,11 @@ function decksPage() {
     }).join("");
   }
   return `${heading}<section class="deck-group">
-    <div class="section-title"><h2>Published decks</h2></div><div class="card-grid">${tiles(true)}</div>
+    <div class="section-title"><h2>CEFR level</h2></div><div class="card-grid">${tiles((deck) => deck.published && !deck.id.startsWith("core-"))}</div>
     </section><section class="deck-group">
-    <div class="section-title"><h2>Local decks</h2></div><div class="card-grid">${tiles(false)}</div>
+    <div class="section-title"><h2>Core frequency</h2></div><div class="card-grid">${tiles((deck) => deck.id.startsWith("core-"))}</div>
+    </section><section class="deck-group">
+    <div class="section-title"><h2>Local decks</h2></div><div class="card-grid">${tiles((deck) => !deck.published)}</div>
     <form id="create-deck" class="panel create-deck">
       <label for="deck-name">New local deck</label>
       <div class="actions"><input type="text" id="deck-name" maxlength="60" placeholder="e.g. Words from my reading" required>
@@ -336,12 +364,13 @@ function draftPanel() {
 
 function detailPage() {
   const card = cardById(state.detail);
-  const deck = card && deckById(card.deck_id);
-  const topicQuery = state.topic && card?.topic === state.topic
-    ? `?${new URLSearchParams({topic: state.topic})}` : "";
-  const back = `<a class="button" href="#deck/${deck?.id || "reading"}${topicQuery}">${icon("back")} Back to deck</a>`;
+  const deck = card && deckById(inDeck(card, state.library) ? state.library : card.deck_id);
+  const filters = deck?.id === state.library
+    ? collectionQuery(state.topic, state.rankBand) : "";
+  const back = `<a class="button" href="#deck/${deck?.id || "reading"}${filters}">${icon("back")} Back to deck</a>`;
   if (!card) return empty("deck", state.loaded ? "Card not found" : "Loading card…", "", back);
-  const details = [deck?.name, card.topic, dueLabel(card)].filter(Boolean).join(" · ");
+  const details = [deck?.name, card.frequency_rank && `Rank ${card.frequency_rank}`,
+    card.source_level && `Source level ${card.source_level}`, card.topic, dueLabel(card)].filter(Boolean).join(" · ");
   return `<div class="workspace">${head(deck?.published ? "Published card" : "Saved card", escapeHtml(details), back)}
     <article class="panel detail">${cardContent(card)}
       <div class="session-actions">
@@ -409,13 +438,13 @@ function trainingOptions(session) {
   </fieldset>`;
 }
 
-function makeSession(mode, id, practice = false, topic = "") {
+function makeSession(mode, id, practice = false, topic = "", rankBand = "") {
   let cards = state.cards.filter((card) => included(card) &&
-    (topic ? card.deck_id === id && card.topic === topic : !id || card.id === id));
+    (topic ? inDeck(card, id) && card.topic === topic && inRankBand(card, rankBand) : !id || card.id === id));
   if (mode === "test" && !practice) cards = cards.filter(due).sort((a, b) => a.due_at - b.due_at);
   const ordered = cards.map((card) => card.id);
   return {ordered, ids: studyOptions.shuffle ? shuffled(ordered) : [...ordered],
-    position: 0, visited: 1, directions: new Map(), revealed: false, practice, topic,
+    position: 0, visited: 1, directions: new Map(), revealed: false, practice, topic, rankBand,
     answer: "", result: null, ratings: [], busy: false, error: ""};
 }
 
@@ -428,7 +457,7 @@ function sessionPage(mode) {
     ? (session.practice ? "Practise cards in your training suite. Your review dates stay as they are." : "Write the translation from memory, then rate your recall.")
     : "Think of the translation, then reveal the card to read and listen.";
   const topicBack = session.topic && deckById(state.detail)
-    ? `<a class="button" href="#deck/${state.detail}?${new URLSearchParams({topic: session.topic})}">Back to topic</a>`
+    ? `<a class="button" href="#deck/${state.detail}${collectionQuery(session.topic, session.rankBand)}">Back to topic</a>`
     : "";
   const heading = head(escapeHtml(title), description,
     isTest && state.cards.some(included)
@@ -568,7 +597,9 @@ function render() {
 function route() {
   const [path, query] = location.hash.slice(1).split("?", 2);
   const [mode, id] = path.split("/");
-  const topic = new URLSearchParams(query).get("topic") || "";
+  const filters = new URLSearchParams(query);
+  const topic = filters.get("topic") || "";
+  const rankBand = filters.get("rank") || "";
   if (mode === "main") return;
   state.screen = ["decks", "card", "study", "test"].includes(mode) ? mode : "deck";
   state.detail = id || null;
@@ -576,10 +607,11 @@ function route() {
     const library = id || "reading";
     if (state.library !== library) Object.assign(state, {library, query: "", kind: ""});
     state.topic = topic;
+    state.rankBand = library.startsWith("core-") ? rankBand : "";
     if (deckById(library)?.published === 0) state.saveDeck = library;
   }
   state.session = ["study", "test"].includes(state.screen)
-    ? makeSession(state.screen, id, false, state.screen === "study" ? topic : "") : null;
+    ? makeSession(state.screen, id, false, state.screen === "study" ? topic : "", rankBand) : null;
   stopAudio();
   render();
   $("#main").focus();
@@ -851,6 +883,10 @@ view.addEventListener("change", (event) => {
     state.topic = event.target.value;
     renderCardGrid();
   }
+  if (event.target.id === "rank-band") {
+    state.rankBand = event.target.value;
+    renderCardGrid();
+  }
   if (event.target.id === "kind") {
     state.kind = event.target.value;
     renderCardGrid();
@@ -966,7 +1002,7 @@ document.addEventListener("click", async (event) => {
       stopAudio();
       state.session = makeSession(state.screen, state.detail,
         button.dataset.action === "all-test" || (button.dataset.action === "restart" && state.session.practice),
-        state.session.topic);
+        state.session.topic, state.session.rankBand);
       render();
       $("#answer-text")?.focus();
       break;

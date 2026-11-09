@@ -8,7 +8,7 @@ words I already know.
 
 ## What you can do
 
-- [x] Browse **746 French cards** across A1, A2, B1 and B2. Pick a topic such as pronouns, travel or work and study it on its own.
+- [x] Browse **2,287 French cards** by CEFR level or frequency. Pick a topic such as pronouns, travel or work and study it on its own.
 - [x] Make a card by asking in your own words. Get a draft with examples, useful forms and recall questions, then ask for changes or save it to a local deck.
 - [x] Study and test in either direction. Shuffle the cards or let the app pick a prompt language at random for each card.
 - [x] Listen to French headwords, examples and forms, or paste your own text into **Pronounce text**.
@@ -124,10 +124,18 @@ server. Apple's licence covers how you can use audio generated with its voices.
 
 | Deck | Cards | What you'll practise |
 | --- | ---: | --- |
-| A1 | 237 | Everyday verbs, pronouns, time, numbers, shopping and directions |
-| A2 | 166 | Returns, holidays, housing, health, cooking, work and study |
-| B1 | 170 | Job interviews, outings, relationships, culture, news and opinions |
-| B2 | 173 | Meetings, evaluating evidence, argument, economics, climate and technology |
+| A1 | 1,010 | Everyday verbs, pronouns, time, numbers, shopping and directions |
+| A2 | 346 | Returns, holidays, housing, health, cooking, work and study |
+| B1 | 555 | Job interviews, outings, relationships, culture, news and opinions |
+| B2 | 325 | Meetings, evaluating evidence, argument, economics, climate and technology |
+
+If you'd like to start with the words you're most likely to come across, go to
+**Decks → Core frequency**. The first 2,000 ranks are all covered. Start with
+the first 800 or 1,000 if you'd like a smaller set, and use the rank and topic
+filters to browse a smaller group of cards. The 5,000 tier includes the cards
+available so far beyond the first 2,000. You can
+include a frequency tier alongside any French level. If a card appears in both,
+you'll see it once per session and it keeps the same review schedule.
 
 I used the Eaquals/CIEP French Core Inventory to choose vocabulary themes and
 wrote the cards and examples for this project. The level labels are approximate.

@@ -106,6 +106,10 @@ class Deck:
                 id TEXT PRIMARY KEY, name TEXT NOT NULL, description TEXT NOT NULL DEFAULT '',
                 published INTEGER NOT NULL DEFAULT 0, enabled INTEGER NOT NULL DEFAULT 1
             )""")
+            db.execute("""CREATE TABLE IF NOT EXISTS card_collections (
+                card_id TEXT NOT NULL REFERENCES cards(id), deck_id TEXT NOT NULL REFERENCES decks(id),
+                PRIMARY KEY (card_id, deck_id)
+            )""")
             db.execute("INSERT OR IGNORE INTO decks (id, name) VALUES (?, ?)", (LOCAL_DECK, "Reading notes"))
 
     @contextmanager
@@ -115,21 +119,29 @@ class Deck:
             yield db
 
     @staticmethod
-    def unpack(row):
+    def unpack(row, memberships=()):
         data = dict(row)
         data.update(json.loads(data.pop("content")))
+        data["deck_ids"] = [row["deck_id"], *memberships]
         return data
 
     def list(self):
         with self.connection() as db:
-            return [self.unpack(row) for row in db.execute(
-                "SELECT * FROM cards ORDER BY created_at DESC, rowid DESC"
-            )]
+            db.execute("BEGIN")
+            memberships = {}
+            for row in db.execute("SELECT card_id, deck_id FROM card_collections ORDER BY deck_id"):
+                memberships.setdefault(row["card_id"], []).append(row["deck_id"])
+            return [
+                self.unpack(row, memberships.get(row["id"], ()))
+                for row in db.execute("SELECT * FROM cards ORDER BY created_at DESC, rowid DESC")
+            ]
 
     def decks(self):
         with self.connection() as db:
             return [dict(row) for row in db.execute(
-                "SELECT * FROM decks ORDER BY published, CASE WHEN published THEN id ELSE lower(name) END"
+                """SELECT * FROM decks ORDER BY published, id LIKE 'core-%',
+                    CASE WHEN id LIKE 'core-%' THEN CAST(substr(id, 6) AS INTEGER) END,
+                    CASE WHEN published THEN id ELSE lower(name) END"""
             )]
 
     def create_deck(self, identifier, name):
@@ -143,23 +155,35 @@ class Deck:
             return dict(db.execute("SELECT * FROM decks WHERE id = ?", (identifier,)).fetchone())
 
     def install_published(self, decks):
+        decks = list(decks)
         with self.connection() as db:
+            db.execute("BEGIN IMMEDIATE")
             now = int(time.time())
             for deck in decks:
                 db.execute("""INSERT INTO decks (id, name, description, published, enabled)
                     VALUES (?, ?, ?, 1, 0)
                     ON CONFLICT(id) DO UPDATE SET name = excluded.name, description = excluded.description""",
                     (deck["id"], deck["name"], deck["description"]))
+            for deck in decks:
                 for identifier, card in deck["cards"]:
                     content = validate_card(card)
                     if "topic" in card:
                         content["topic"] = clean_text(card["topic"], "Topic", 100)
+                    for key in ("frequency_rank", "source_level"):
+                        if key in card:
+                            content[key] = card[key]
                     db.execute("""INSERT INTO cards (id, content, created_at, due_at, deck_id)
                         VALUES (?, ?, ?, ?, ?)
                         ON CONFLICT(id) DO UPDATE SET content = excluded.content
                         WHERE cards.content <> excluded.content""",
                         (identifier, json.dumps(content, ensure_ascii=False, sort_keys=True),
                          now, now, deck["id"]))
+            for deck in decks:
+                db.execute("DELETE FROM card_collections WHERE deck_id = ?", (deck["id"],))
+                for identifier in deck.get("members", ()):
+                    db.execute("""INSERT INTO card_collections (card_id, deck_id)
+                        SELECT id, ? FROM cards WHERE id = ? AND deck_id <> ?""",
+                        (deck["id"], identifier, deck["id"]))
 
     def set_enabled(self, identifier, enabled, *, card=False):
         if type(enabled) is not bool:
@@ -200,7 +224,10 @@ class Deck:
         now = int(time.time()) if now is None else now
         with self.connection() as db:
             db.execute("BEGIN IMMEDIATE")
-            row = db.execute("""SELECT cards.*, decks.enabled AS deck_enabled FROM cards
+            row = db.execute("""SELECT cards.*, (decks.enabled OR EXISTS (
+                    SELECT 1 FROM card_collections JOIN decks AS collection ON collection.id = card_collections.deck_id
+                    WHERE card_collections.card_id = cards.id AND collection.enabled
+                )) AS deck_enabled FROM cards
                 JOIN decks ON cards.deck_id = decks.id WHERE cards.id = ?""", (identifier,)).fetchone()
             if row is None:
                 return None
@@ -224,4 +251,8 @@ class Deck:
                    WHERE id = ?""",
                 (stage, now + delay, exercise_index, identifier),
             )
-            return self.unpack(db.execute("SELECT * FROM cards WHERE id = ?", (identifier,)).fetchone())
+            memberships = [item["deck_id"] for item in db.execute(
+                "SELECT deck_id FROM card_collections WHERE card_id = ? ORDER BY deck_id", (identifier,)
+            )]
+            return self.unpack(db.execute("SELECT * FROM cards WHERE id = ?", (identifier,)).fetchone(),
+                               memberships)

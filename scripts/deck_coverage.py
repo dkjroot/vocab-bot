@@ -3,13 +3,20 @@
 import argparse
 from collections import defaultdict
 import csv
+from hashlib import sha256
 import io
 from pathlib import Path
 import re
+import sys
 import unicodedata
 from zipfile import ZipFile
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from published_decks import FREQUENCY_TIERS, published_decks
+
 DATA = ROOT / "data" / "coverage"
 LEVELS = ("A1", "A2", "B1", "B2", "C1", "C2")
 LIMIT = 5000
@@ -60,6 +67,8 @@ def level_labels(path):
 
 def card_lemma(title, noun_forms):
     word = normalise(title)
+    if word in {"l'un", "l'une"}:
+        return word
     article = ARTICLE.match(word)
     if article and WORD.fullmatch(word[article.end():]):
         noun = word[article.end():]
@@ -97,10 +106,11 @@ def ratio(numerator, denominator):
     return f"{numerator}/{denominator} ({numerator / denominator:.1%})" if denominator else "—"
 
 
-def report(decks, ranked, targets, matches, themes):
-    all_matches = set().union(*matches.values())
+def report(decks, ranked, targets, matches, themes, frequency, total_cards):
+    all_matches = set().union(*matches.values(), *frequency.values())
     lines = [
         "# Published deck coverage", "",
+        f"There are **{total_cards:,} unique cards** in the published catalogue.", "",
         "## Frequent French lemmas", "",
         "The reference ranks 5,000 single-word lemmas by subtitle frequency in Lexique 4.10.",
         "The ranking sums observed form frequencies by lemma, excludes proper nouns",
@@ -129,14 +139,12 @@ def report(decks, ranked, targets, matches, themes):
         "### Cumulative frequency targets", "",
         "These are project planning checkpoints, separate from the FLELex level labels.",
         "They measure what the cards teach and do not measure a learner's proficiency.", "",
-        "| Checkpoint | Frequency window | In decks through this level | In any published deck |",
-        "| --- | --- | ---: | ---: |",
+        "| Core frequency tier | In this tier | In any published collection |",
+        "| --- | ---: | ---: |",
     ])
-    cumulative.clear()
-    for level, size in zip(LEVELS[:4], (800, 1000, 2000, 5000), strict=True):
-        cumulative.update(matches[level])
+    for size in FREQUENCY_TIERS:
         window = set(ranked[:size])
-        lines.append(f"| {level} | First {size:,} | {ratio(len(window & cumulative), size)} | "
+        lines.append(f"| First {size:,} | {ratio(len(frequency[size]), size)} | "
                      f"{ratio(len(window & all_matches), size)} |")
     lines.extend([
         "", "## Annex E vocabulary themes", "",
@@ -164,11 +172,92 @@ def report(decks, ranked, targets, matches, themes):
         "and [FLELex/Beacco TSV](https://cental.uclouvain.be/cefrlex/static/resources/fr/FleLex_TT_Beacco.tsv)",
         "in `data/coverage/`, then run:", "",
         "```sh", "python scripts/deck_coverage.py --report decks/COVERAGE.md", "```", "",
-        "The script also writes the full ranked reference and deck matches to",
-        "`data/coverage/top-5000.tsv`. The source datasets and combined list stay",
-        "in the ignored local data folder. The report contains aggregate counts.",
+        "The audit checks the source archives and all 5,000 ranked entries against",
+        "[the frozen checksums](coverage-checksums.tsv). It writes current collection",
+        "matches and separate worklists for missing headwords and placements under",
+        "`data/coverage/`.",
     ])
     return "\n".join(lines) + "\n"
+
+
+def checked_reference(lexique, flelex):
+    with (ROOT / "decks" / "coverage-checksums.tsv").open(encoding="utf-8") as source:
+        checksums = dict(csv.reader(source, delimiter="\t"))
+    for path, key in ((lexique, "Lexique4.1.zip"), (flelex, "FleLex_TT_Beacco.tsv")):
+        if sha256(path.read_bytes()).hexdigest() != checksums[key]:
+            raise ValueError(f"{path} differs from the frozen coverage source.")
+    ranked, nouns = frequency_list(lexique)
+    labels = level_labels(flelex)
+    rows = [(rank, word, labels.get(word, "Unclassified")) for rank, word in enumerate(ranked, 1)]
+    reference = "rank\tlemma\tlevel\n" + "".join(f"{rank}\t{word}\t{label}\n" for rank, word, label in rows)
+    if sha256(reference.encode()).hexdigest() != checksums["rank-lemma-level.tsv"]:
+        raise ValueError("The 5,000 ranked lemmas or source labels have changed.")
+    return rows, nouns
+
+
+def audit(rows, nouns):
+    catalog = list(published_decks())
+    cards = {identifier: card for deck in catalog for identifier, card in deck["cards"]}
+    ranked = [word for _, word, _ in rows]
+    ranks = {word: rank for rank, word, _ in rows}
+    card_words = {}
+    for identifier, card in cards.items():
+        word = card_lemma(card["title"], nouns)
+        if "frequency_rank" in card:
+            rank = card["frequency_rank"]
+            _, expected, label = rows[rank - 1]
+            # The reference spells out oe, while the cards use the French ligature.
+            literal = ARTICLE.sub("", normalise(card["title"]))
+            spellings = {expected, expected.replace("oe", "œ")}
+            if not spellings.intersection((word, literal)) or card["source_level"] != label:
+                raise ValueError(f"Rank {rank} expects {expected} ({label}), got {card['title']}.")
+            word = expected
+        if word in ranks:
+            card_words[identifier] = word
+    members = {deck["id"]: {identifier for identifier, _ in deck["cards"]} | set(deck["members"])
+               for deck in catalog}
+    collection_words = {deck_id: {card_words[identifier] for identifier in ids if identifier in card_words}
+                        for deck_id, ids in members.items()}
+    frequency = {size: collection_words[f"core-{size}"] for size in FREQUENCY_TIERS}
+    for size, words in frequency.items():
+        if any(ranks[word] > size for word in words):
+            raise ValueError(f"Core frequency tier {size} includes an out-of-range card.")
+    matches = {level: collection_words[level.lower()] for level in LEVELS[:4]}
+    targets = {level: set() for level in (*LEVELS, "Unclassified")}
+    identifiers = defaultdict(list)
+    for identifier, word in card_words.items():
+        identifiers[word].append(identifier)
+    reference_rows, missing, placements = [], [], []
+    for rank, word, label in rows:
+        targets[label].add(word)
+        present = [deck_id for deck_id, words in collection_words.items() if word in words]
+        reference_rows.append((rank, word, label, ",".join(present)))
+        expected = [f"core-{size}" for size in FREQUENCY_TIERS if rank <= size]
+        if label in LEVELS[:4]:
+            expected.append(label.lower())
+        gaps = [deck_id for deck_id in expected if deck_id not in present]
+        if not gaps:
+            continue
+        ids = identifiers[word]
+        topic = cards[ids[0]]["topic"] if ids else ("Core nouns" if word in nouns else "Core vocabulary")
+        status = "Review placement" if ids else "Write and review"
+        worklist = placements if ids else missing
+        worklist.append((rank, word, label, ",".join(ids), ",".join(gaps), topic, status))
+
+    DATA.mkdir(parents=True, exist_ok=True)
+    worklist_header = ("rank", "lemma", "level", "card_ids", "missing_placements", "proposed_topic", "qa_status")
+    for filename, header, entries in (
+        ("top-5000.tsv", ("rank", "lemma", "level", "published_decks"), reference_rows),
+        ("missing-headwords.tsv", worklist_header, missing),
+        ("placement-fixes.tsv", worklist_header, placements),
+    ):
+        with (DATA / filename).open("w", encoding="utf-8", newline="") as output:
+            writer = csv.writer(output, delimiter="\t", lineterminator="\n")
+            writer.writerow(header)
+            writer.writerows(entries)
+    themes = theme_counts(load_decks())
+    return report({level: members[level.lower()] for level in LEVELS[:4]},
+                  ranked, targets, matches, themes, frequency, len(cards))
 
 
 def main():
@@ -177,23 +266,7 @@ def main():
     parser.add_argument("--flelex", type=Path, default=DATA / "FleLex_TT_Beacco.tsv")
     parser.add_argument("--report", type=Path, help="Write the Markdown report to this path")
     args = parser.parse_args()
-    ranked, nouns = frequency_list(args.lexique)
-    labels = level_labels(args.flelex)
-    decks = load_decks()
-    targets = {level: set() for level in (*LEVELS, "Unclassified")}
-    for word in ranked:
-        targets[labels.get(word, "Unclassified")].add(word)
-    reference = set(ranked)
-    matches = {level: {card_lemma(title, nouns) for title in cards.values()} & reference
-               for level, cards in decks.items()}
-    result = report(decks, ranked, targets, matches, theme_counts(decks))
-    DATA.mkdir(parents=True, exist_ok=True)
-    with (DATA / "top-5000.tsv").open("w", encoding="utf-8", newline="") as output:
-        writer = csv.writer(output, delimiter="\t", lineterminator="\n")
-        writer.writerow(("rank", "lemma", "level", "published_decks"))
-        for rank, word in enumerate(ranked, start=1):
-            covered_by = ",".join(level for level, words in matches.items() if word in words)
-            writer.writerow((rank, word, labels.get(word, "Unclassified"), covered_by))
+    result = audit(*checked_reference(args.lexique, args.flelex))
     if args.report:
         args.report.write_text(result, encoding="utf-8")
     else:

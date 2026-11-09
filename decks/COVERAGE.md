@@ -1,5 +1,7 @@
 # Published deck coverage
 
+There are **2,287 unique cards** in the published catalogue.
+
 ## Frequent French lemmas
 
 The reference ranks 5,000 single-word lemmas by subtitle frequency in Lexique 4.10.
@@ -12,15 +14,15 @@ These are corpus-based study targets with approximate levels.
 
 | Target level | Target lemmas | In the matching deck | In that deck or earlier | In any published deck |
 | --- | ---: | ---: | ---: | ---: |
-| A1 | 1,143 | 203/1143 (17.8%) | 203/1143 (17.8%) | 253/1143 (22.1%) |
-| A2 | 491 | 75/491 (15.3%) | 80/491 (16.3%) | 89/491 (18.1%) |
-| B1 | 1,208 | 88/1208 (7.3%) | 102/1208 (8.4%) | 109/1208 (9.0%) |
-| B2 | 1,301 | 66/1301 (5.1%) | 83/1301 (6.4%) | 83/1301 (6.4%) |
-| C1 | 164 | — | — | 1/164 (0.6%) |
-| C2 | 140 | — | — | 0/140 (0.0%) |
-| Unclassified | 553 | — | — | 5/553 (0.9%) |
+| A1 | 1,143 | 976/1143 (85.4%) | 976/1143 (85.4%) | 984/1143 (86.1%) |
+| A2 | 491 | 255/491 (51.9%) | 257/491 (52.3%) | 262/491 (53.4%) |
+| B1 | 1,208 | 473/1208 (39.2%) | 483/1208 (40.0%) | 489/1208 (40.5%) |
+| B2 | 1,301 | 218/1301 (16.8%) | 227/1301 (17.4%) | 227/1301 (17.4%) |
+| C1 | 164 | — | — | 10/164 (6.1%) |
+| C2 | 140 | — | — | 12/140 (8.6%) |
+| Unclassified | 553 | — | — | 97/553 (17.5%) |
 
-Across the whole reference, the published decks match **540/5000 (10.8%)**.
+Across the whole reference, the published decks match **2081/5000 (41.6%)**.
 
 The match is based on the card headword. Articles are stripped from single
 nouns and noun forms are reduced to the lemma when Lexique gives a unique match.
@@ -32,12 +34,12 @@ A match means the spelling is taught somewhere in the deck, regardless of sense.
 These are project planning checkpoints, separate from the FLELex level labels.
 They measure what the cards teach and do not measure a learner's proficiency.
 
-| Checkpoint | Frequency window | In decks through this level | In any published deck |
-| --- | --- | ---: | ---: |
-| A1 | First 800 | 172/800 (21.5%) | 270/800 (33.8%) |
-| A2 | First 1,000 | 239/1000 (23.9%) | 315/1000 (31.5%) |
-| B1 | First 2,000 | 409/2000 (20.4%) | 459/2000 (22.9%) |
-| B2 | First 5,000 | 540/5000 (10.8%) | 540/5000 (10.8%) |
+| Core frequency tier | In this tier | In any published collection |
+| --- | ---: | ---: |
+| First 800 | 800/800 (100.0%) | 800/800 (100.0%) |
+| First 1,000 | 1000/1000 (100.0%) | 1000/1000 (100.0%) |
+| First 2,000 | 2000/2000 (100.0%) | 2000/2000 (100.0%) |
+| First 5,000 | 2081/5000 (41.6%) | 2081/5000 (41.6%) |
 
 ## Annex E vocabulary themes
 
@@ -48,10 +50,10 @@ practice. Annex E also lists grammar, discourse and communication goals.
 
 | Deck | Cards | Themes represented | Themes with 3+ cards |
 | --- | ---: | ---: | ---: |
-| A1 | 237 | 16/16 (100.0%) | 16/16 (100.0%) |
-| A2 | 166 | 13/13 (100.0%) | 13/13 (100.0%) |
-| B1 | 170 | 11/11 (100.0%) | 11/11 (100.0%) |
-| B2 | 173 | 13/13 (100.0%) | 13/13 (100.0%) |
+| A1 | 1010 | 16/16 (100.0%) | 16/16 (100.0%) |
+| A2 | 346 | 13/13 (100.0%) | 13/13 (100.0%) |
+| B1 | 555 | 11/11 (100.0%) | 11/11 (100.0%) |
+| B2 | 325 | 13/13 (100.0%) | 13/13 (100.0%) |
 
 ### A1
 
@@ -142,6 +144,7 @@ in `data/coverage/`, then run:
 python scripts/deck_coverage.py --report decks/COVERAGE.md
 ```
 
-The script also writes the full ranked reference and deck matches to
-`data/coverage/top-5000.tsv`. The source datasets and combined list stay
-in the ignored local data folder. The report contains aggregate counts.
+The audit checks the source archives and all 5,000 ranked entries against
+[the frozen checksums](coverage-checksums.tsv). It writes current collection
+matches and separate worklists for missing headwords and placements under
+`data/coverage/`.

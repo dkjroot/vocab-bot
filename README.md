@@ -18,14 +18,32 @@ words I already know.
 
 ## Get started
 
-You can browse, study and test the built-in cards with Python and a browser.
-You only need to set up an LLM if you want to make new cards.
+You can browse, study and test the built-in cards with Python 3.12 and a
+browser. You only need to set up an LLM if you want to make new cards.
+
+### macOS and Linux
 
 ```sh
 git clone https://github.com/dkjroot/vocab-bot.git
 cd vocab-bot
 python3.12 web_server.py
 ```
+
+If your Python 3.12 installation provides `python3`, use that command in
+place of `python3.12`.
+
+### Windows (PowerShell)
+
+```powershell
+git clone https://github.com/dkjroot/vocab-bot.git
+Set-Location vocab-bot
+py -3.12 web_server.py
+```
+
+If Python 3.12 is on your PATH as `python`, you can use `python` in place
+of `py -3.12` throughout the Windows instructions.
+
+### Start studying
 
 Open [Vocab Bot](http://localhost:8477) in your browser. Go to **Decks**, browse
 a level and choose **Include in training** when you're ready. The published
@@ -40,24 +58,45 @@ The buttons show their shortcuts, and you can turn off letter shortcuts in
 
 ## Make your own cards
 
-On a Mac, you can use Gemini for drafts and your Mac's own French voice for
-pronunciation. Get an API key from Google AI Studio, stop the server if it's
-running, and run the following from the project directory. The key prompt
-uses zsh, the default shell on a Mac. [Google AI Studio](https://aistudio.google.com/apikey)
+You can use Gemini to draft cards on all three platforms. Get a Google AI
+Studio API key, stop the server with **Ctrl+C** if it's running, and run the
+commands for your system from the project directory. [Google AI Studio](https://aistudio.google.com/apikey)
+
+### macOS and Linux (zsh or Bash)
 
 ```sh
 python3.12 -m venv .venv
-source .venv/bin/activate
-python -m pip install google-genai
-read -rs 'GEMINI_API_KEY?Google AI Studio API key: '
+.venv/bin/python -m pip install google-genai
+printf 'Google AI Studio API key: '
+IFS= read -rs GEMINI_API_KEY
+printf '\n'
 export GEMINI_API_KEY
-python configure.py
+.venv/bin/python configure.py
 ```
 
-Choose `chat_engines.gemini_online` and `tts_engines.macos_offline`, then start
-the server again with `python web_server.py`. You can change the model in
-`local-config.json`. Keep the API key in your shell environment and export it
-again when you start the server from a new terminal.
+### Windows (PowerShell)
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install google-genai
+$key = Read-Host 'Google AI Studio API key' -AsSecureString
+$env:GEMINI_API_KEY = [System.Net.NetworkCredential]::new('', $key).Password
+Remove-Variable key
+.\.venv\Scripts\python.exe configure.py
+```
+
+### Choose the engines and start the server
+
+Choose `chat_engines.gemini_online` for the chat engine. For speech, choose
+`tts_engines.macos_offline` on macOS. On Linux and Windows, you can select
+`tts_engines.gTTS_online` to finish the wizard. The website uses an installed
+browser voice on those platforms, so the gTTS package is only needed if you
+use the separate command-line speech tools.
+
+Start the server in the same terminal with `.venv/bin/python web_server.py`
+on macOS or Linux, or `.\.venv\Scripts\python.exe web_server.py` in
+PowerShell. You can change the model in `local-config.json`. If you start
+the server in a new terminal, set the API key again there.
 
 Try **Make a card** with a request like “Make me a card for *se faire* followed
 by an infinitive.” Read the draft and listen to the examples before saving it.
@@ -72,10 +111,12 @@ choose `chat_engines.openai_local` in `configure.py`. Set `OPENAI_BASE_URL` to
 its API URL and edit the model in `local-config.json` to match. The default URL
 is `http://localhost:8081/v1`. Set `OPENAI_API_KEY` if your server needs one.
 
-The website uses the configured macOS voice when available. On other setups,
-pronunciation can use an installed French voice from your browser. The Mac
-defaults to Thomas for French. To change it, run `say -v '?'` to see the installed
-voices, then set `VOCAB_BOT_FR_VOICE` to the name you want before starting the
+On Linux and Windows, pronunciation depends on your browser exposing an
+installed French speech voice. If the speaker buttons can't play anything,
+check your system's speech or language settings for a French voice. On macOS
+the built-in engine defaults to Thomas for French. To change it, run
+`say -v '?'` to see the installed voices, then set `VOCAB_BOT_FR_VOICE`
+to the name you want before starting the
 server. Apple's licence covers how you can use audio generated with its voices.
 [Apple's macOS licence](https://www.apple.com/legal/sla/)
 
